@@ -12,8 +12,11 @@ schema = [
   bigquery.SchemaField("match_id", "INT64", mode="REQUIRED"),
   bigquery.SchemaField("league", "STRING", mode="REQUIRED"),
   bigquery.SchemaField("season_start_year", "INT64", mode="REQUIRED"),
+  bigquery.SchemaField("extracted_at", "TIMESTAMP", mode="REQUIRED"),
   bigquery.SchemaField("ingested_at", "TIMESTAMP", mode="REQUIRED"),
+  bigquery.SchemaField("run_id", "INT64", mode="REQUIRED"),
   bigquery.SchemaField("source", "STRING", mode="REQUIRED"),
+  bigquery.SchemaField("payload_content_hash", "STRING", mode="NULLABLE"),
   bigquery.SchemaField("payload", "JSON", mode="NULLABLE")
   ]
 
