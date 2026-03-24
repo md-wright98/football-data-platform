@@ -13,7 +13,7 @@ client = bigquery.Client()
 
 # set dataset_id and table_id
 dataset_id = "epl_raw"
-table_id = "football-data-platform-483422.epl_raw.understat_matches_raw"
+table_id = "football-data-platform-483422.epl_raw.understat_matches_landing"
 
 # 1. Download match data and generate an extraction timestamp
 def download_match_data(league: str, season: str) -> dict:
@@ -82,7 +82,6 @@ def load_match_data_to_bigquery(data, table_id):
       bigquery.SchemaField("league", "STRING", mode="REQUIRED"),
       bigquery.SchemaField("season_start_year", "INT64", mode="REQUIRED"),
       bigquery.SchemaField("extracted_at", "TIMESTAMP", mode="REQUIRED"),
-      bigquery.SchemaField("ingested_at", "TIMESTAMP", mode="NULLABLE"),
       bigquery.SchemaField("run_id", "STRING", mode="REQUIRED"),
       bigquery.SchemaField("source", "STRING", mode="REQUIRED"),
       bigquery.SchemaField("payload_content_hash", "STRING", mode="NULLABLE"),
