@@ -32,6 +32,7 @@ def download_match_data(league: str, season: str) -> dict:
     #logger.exception(f"Failed to download match data for {league} {season} season.")
     raise
 
+  print("match data downloaded successfully.")
   return match_data, extracted_at_timestamp
 
 
@@ -55,8 +56,6 @@ def transform_match_data(data: dict, league: str, season: str, extracted_at_time
       "season_start_year" : int(season),
       # d. store the ingested_at_timestamp
       "extracted_at" : extracted_at_timestamp,
-      # e. create ingested_at_timestamp at ingestion
-      "ingested_at" : None,
       # f. store the run ID from point of ingestion as its own column
       "run_id" : f"{extracted_at_timestamp.strftime('%Y%m%dT%H%M%S')}_{uuid.uuid4().hex[:8]}",
       # g. store Understat as the source
@@ -70,6 +69,8 @@ def transform_match_data(data: dict, league: str, season: str, extracted_at_time
     match_rows.append(row)
 
   match_df = pd.DataFrame.from_dict(data=match_rows)
+
+  print("match data transformed successfully.")
 
   return match_df
 
@@ -86,7 +87,8 @@ def load_match_data_to_bigquery(data, table_id):
       bigquery.SchemaField("source", "STRING", mode="REQUIRED"),
       bigquery.SchemaField("payload_content_hash", "STRING", mode="NULLABLE"),
       bigquery.SchemaField("payload", "STRING", mode="NULLABLE")
-    ]
+    ],
+    write_disposition="WRITE_TRUNCATE"
   )
 
   job = client.load_table_from_dataframe(dataframe=data, destination=table_id, job_config=job_config)
@@ -94,20 +96,3 @@ def load_match_data_to_bigquery(data, table_id):
 
   table = client.get_table(table_id)
   print(f"Loaded {table.num_rows} rows and {len(table.schema)} columns to {table_id} table.")
-
-
-# 4. Load each row into BigQuery
-  # a. generate a timestamp at the point of ingestion
-
-# main(season, league)
-  #raw_data, timestamp = download_match_data(season, league)
-  
-  # run_id = generate_run_id
-  #transform_match_data("2021", raw_data, timestamp)
-    # generate_payload_hash
-  # load_data_to_bigquery
-    # generate_ingested_at_timestamp
-
-raw_data, extracted_at = download_match_data(league="EPL", season="2021")
-transformed_data = transform_match_data(data=raw_data, league="EPL", season="2021", extracted_at_timestamp=extracted_at)
-load_match_data_to_bigquery(transformed_data, table_id)
