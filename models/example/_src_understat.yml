@@ -1,0 +1,16 @@
+sources:
+  - name: understat
+    description: Raw football match data scraped from Understat
+    database: football-data-platform-483422
+    schema: epl_raw
+    tables:
+      - name: understat_matches_landing
+        description: One football match per row
+        columns:
+          - name: match_id
+            description: The unique identifier for each match, primary key for this table
+            tests:
+              - unique
+              - not_null
+                  
+                  
