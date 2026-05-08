@@ -23,8 +23,9 @@ We will not use Snowflake for this project, as the scale of the project is likel
 
 ### Negative / Trade-offs
 
-- What gets harder / worse?
-- What risks does this introduce?
+- Sandbox Limitations: Data in the sandbox expires after 60 days unless the table is explicitly updated or a billing account is added. This requires a robust refresh strategy.
+- Compute Constraints: We are limited to the free tier query limits (1TB of processing per month). While sufficient for this project, poorly optimized SQL could exhaust this quickly.
+- Lack of DDL/DML support for certain features: Some advanced features like partition management or certain clustering configurations can be more restrictive without an active billing account.
 
 ### Follow-ups / Next steps
 

@@ -1,8 +1,8 @@
-# ADR-007: Versioning Strategy Change
+# ADR-008: landing table
 
 ## Status
 
-Accepted
+Superseded by ADR-009
 
 ## Context
 

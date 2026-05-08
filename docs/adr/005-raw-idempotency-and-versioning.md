@@ -11,24 +11,25 @@ breakages, we need a strategy to version records and control the creation of upd
 
 ## Decision
 
-Records will be versioned using an extracted_at and ingested_at field, as well as a run_id to break ties.
-The latest record is the one with the most recent extracted_at timestamp. run_id will be used to break ties.
-The canonical JSON payload of each match will be hashed, and this hash will determine if a new version is needed.
-A new version of a match record will only be created when the hash of the new record is different to the latest stored data.
+We will implement Batch-Level Idempotency using metadata timestamps rather than row-level hashing.
+
+1. Metadata Fields: Every record is enriched with an extracted_at timestamp during ingestion.
+2. De-duplication Logic: We will utilize the dbt QUALIFY statement in the staging layer to partition by match_id and select only the record with the most recent extracted_at value.
+3. Storage: The raw layer will remain "Append-Only," preserving a full audit trail of how match data changed over time.
 
 ## Consequences
 
 ### Positive
 
-- Having both an indicator of source time and system time prevents us from ordering versions incorrectly due to delayed ingestions or bugs
-- A hash makes it easy to determine if a payload differs from the most recent one we have stored without complex key-wise comparison logic
+- The Python ingestion script remains "stateless" and lightweight.
+- The de-duplication logic is transparently documented in the dbt SQL code.
+- 100% data retention is maintained in the Bronze layer.
 
 ### Negative / Trade-offs
 
-- A hash will will treat all changes equally, meaning any small change to the data will create a new record
-- A hash will require additional overhead to implement
+- The raw table will contain multiple rows for the same match_id. While storage costs are negligible for this project, a long-term retention policy may eventually be required.
 
 ### Follow-ups / Next steps
 
-- Next we will need to define clearly what qualifies a record as the "latest" version
-- We will need to decide on a retention strategy to make sure we do not store an uncontrolled number of duplicates for any one match.
+- Monitor BigQuery storage usage if the number of leagues increases significantly.
+- Implement dbt tests to verify that the stg\_ models contain exactly one record per match_id.

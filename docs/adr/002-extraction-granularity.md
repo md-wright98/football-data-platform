@@ -35,3 +35,11 @@ We will not ingest data by team-season or by match as this will result in a much
 - Have to consider the cost of ingestion and the ability to verify the data, e.g. here each previous season should have exactly 380 games
 - It's important to design a system around failure - think about the unit of ingestion in terms of how easy it is to monitor and fix failure
 - What is the cost of retrying a failed ingestion?
+
+### Implementation Update
+
+This decision remains **Active**. By ingesting at the `league-season` level, we achieved:
+
+- **Simplified Idempotency:** We can overwrite or append entire seasons without complex row-level tracking.
+- **Bulk Loading:** Optimized BigQuery `load_table_from_json` performance by sending larger batches.
+- **Validation:** As noted in the 'Personal Learnings', we implemented a dbt test to verify the row count (e.g., 380 matches for a completed EPL season), confirming the integrity of the 'league-season' ingestion unit.

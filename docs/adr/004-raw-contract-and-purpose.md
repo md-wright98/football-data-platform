@@ -29,10 +29,9 @@ The raw layer will not apply any business logic or transformation to the data.
 
 ### Follow-ups / Next steps
 
-- Next need to define a startegy to ensure idempotency
-- Need a versioning and retention policy
-- Need to define what constitutes a successful ingestion of data
-- Need to define the raw table schema and required fields
+- Idempotency Strategy: Resolved by adding an extracted_at timestamp to every row and using dbt window functions to filter for the latest record.
+- Raw Table Schema: Resolved by using BigQuery's native JSON support to store the payload as-is, ensuring 0% data loss during ingestion.
+- Success Definition: Defined as a successful BigQuery Load Job completion for the expected number of matches (380 per season).
 
 ### Personal Learnings
 

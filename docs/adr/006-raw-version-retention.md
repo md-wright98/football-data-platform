@@ -6,21 +6,22 @@ Accepted
 
 ## Context
 
-The raw layer of the warehouse will store multiple versions of records for matches, each with different data. We will need a strategy to
-determine how many versions of each match we will store to prevent uncontrolled duplication.
+The raw layer is designed as an append-only layer, storing every version of match data received from the source. We originally considered a "Rolling 5-version" limit to prevent table bloat.
 
 ## Decision
 
-Versions are ordered by extracted_at, tie-broekn by run_id.
-The raw layer will store the 5 most recent versions of the match data.
-Versions older than this will be deleted from the raw layer as part of ingestion cleanup.
+We will move to a Permanent Retention strategy for the raw layer.
+
+- No Deletion: No records will be deleted from the raw layer during normal operations.
+- Partitioning: If data volume grows, we will implement BigQuery Ingestion-time Partitioning to optimize query costs rather than deleting history.
 
 ## Consequences
 
 ### Positive
 
-- Preserves data lineage and revision history without unnecessary bloating.
+- Perfect Lineage: We never lose data. If the source provider (Understat) changes a historical value, we can track exactly when that change happened.
+- Simplified Ingestion: The Python script only needs WRITE_APPEND permissions, not DELETE permissions.
 
 ### Negative / Trade-offs
 
-- The current hash strategy will detect any small change in the data and create a new record, so we may get through versions quickly.
+- The raw table size will grow linearly over time. While not an issue now, a long-term archival strategy (e.g., moving data older than 2 years to Coldline Storage) may be considered in the future.
