@@ -1,6 +1,6 @@
 with raw as (
 
-    select * from {{ source('understat', 'understat_matches_landing') }}
+    select * from {{ source('understat', 'understat_matches_raw') }}
 
 ),
 

@@ -4,7 +4,7 @@ sources:
     database: football-data-platform-483422
     schema: epl_raw
     tables:
-      - name: understat_matches_landing
+      - name: understat_matches_raw
         description: One football match per row
         columns:
           - name: match_id
