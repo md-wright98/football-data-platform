@@ -25,6 +25,7 @@ flattened as (
         json_value(payload, "$.forecast.d") as draw_probability,
         json_value(payload, "$.forecast.l") as away_win_probability,
     from raw
+    qualify row_number() over (partition by match_id order by extracted_at desc)
 
 )
 
