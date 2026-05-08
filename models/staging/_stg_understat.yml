@@ -1,0 +1,47 @@
+models:
+  - name: stg_understat__matches
+    description: One row is one match. Flattens the JSON payload of each record in the raw matches table into a single match record.
+    columns:
+    - name: match_id
+      description: Unique identifier and primary key for each match.
+      tests:
+        - unique
+        - not_null
+    - name: home_team_name
+      description: Name of the home team.
+      tests: 
+        - not_null
+    - name: away_team_name
+      description: Name of the away team.
+      tests:
+        - not_null
+    - name: home_goals
+      description: Goals scored by the home team.
+      tests:
+        - dbt_utils.accepted_range:
+            arguments:
+              min_value: 0
+    - name: away_goals
+      description: Goals scored by the away team.
+      tests:
+        - dbt_utils.accepted_range:
+            arguments:
+              min_value: 0
+    - name: home_xg
+      description: Total xG of the away team during the game.
+      tests:
+        - dbt_utils.accepted_range:
+            arguments:
+              min_value: 0
+    - name: away_xg
+      description: Total xG of the away team during the game.
+      tests:
+        - dbt_utils.accepted_range:
+            arguments:
+              min_value: 0
+    - name: match_date
+      description: Date the game was played on or is scheduled to be played on.
+      tests:
+        - not_null
+        
+            
