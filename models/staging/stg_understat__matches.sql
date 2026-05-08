@@ -13,6 +13,7 @@ flattened as (
     select 
         match_id,
         league,
+        safe_cast(season_start_year as int64) as season,
         json_value(payload, "$.h.id") AS home_team_id,
         json_value(payload, "$.h.title") AS home_team_name,
         json_value(payload, "$.h.short_title") AS home_team_name_short,
