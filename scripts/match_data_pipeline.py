@@ -1,78 +1,97 @@
 # imports
-from understatapi import UnderstatClient
-from datetime import datetime
-from google.cloud import bigquery
-# import logging
+import logging
 import json
 import hashlib
 import uuid
 import pandas as pd 
+from understatapi import UnderstatClient
+from datetime import datetime, timezone
+from google.cloud import bigquery
+
+# Setup logging
+logging.basicConfig(
+  level=logging.INFO,
+  format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # create BigQuery client object
 client = bigquery.Client()
 
 # set dataset_id and table_id
-dataset_id = "epl_raw"
-table_id = "football-data-platform-483422.epl_raw.understat_matches_landing"
+
+CONFIG = {
+
+  "dataset_id" : "epl_raw",
+  "table_id" : "football-data-platform-483422.epl_raw.understat_matches_raw",
+
+}
 
 # 1. Download match data and generate an extraction timestamp
-def download_match_data(league: str, season: str) -> dict:
+def download_match_data(league: str, season: str) -> tuple[list, datetime]:
+  """
+  Fetches raw match data from Understat for a specific league and season.
 
-  print(f"Starting match data download for {league} {season} season.")
-  #logger.info(f"Starting match data download for {league} {season} season.")
+  Args:
+    league (str): Name of league as a string e.g. 'EPL'
+    season (str): Start year of season as a string e.g. '2025'
+
+  Returns:
+    tuple: (list of match dictionaries, extraction timestamp)
+  """
+  logger.info(f"Starting match data download for {league} {season} season.")
 
   try:
-    with UnderstatClient() as understat_client:
+    with UnderstatClient() as understat:
       match_data = UnderstatClient().league(league=league).get_match_data(season=season)
-      extracted_at_timestamp = datetime.now()
-      print(f"Downloaded data for {len(match_data)} matches.")
-      #logging.info(f"Downloaded data for {len(match_data)} matches.")
-  except Exception:
-    print(f"Failed to download match data for {league} {season} season.")
-    #logger.exception(f"Failed to download match data for {league} {season} season.")
+      extracted_at_timestamp = datetime.now(timezone.utc)
+      logging.info(f"Succesfully downloaded {len(match_data)} matches for {league} {season}.")
+      return match_data, extracted_at_timestamp
+  except Exception as e:
+    logger.error(f"Failed to download match data for {league} {season}: {str(e)}")
     raise
 
-  print("match data downloaded successfully.")
-  return match_data, extracted_at_timestamp
-
-
 # 2. Transform each match entry into a row for the raw layer
-def transform_match_data(data: dict, league: str, season: str, extracted_at_timestamp) -> list:
-
-  match_rows = []
-
+def transform_match_data(data: dict, league: str, season: str, extracted_at_timestamp) -> pd.DataFrame:
+  """
+  Cleans and structures raw Understat API data into format suitable for BigQuery. Includes a content hash
+  for idempotency and a batch run ID for traceability.
+  """
   def create_hash(match_data: dict) -> str:
     canonical = json.dumps(match_data, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
-  for match in data:
+  match_rows = []
+  batch_run_id = f"{extracted_at_timestamp.strftime('%Y%m%dT%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
-    row = {
-      # a. extract the match_id into its own column
-      "match_id" : int(match["id"]),
-      # b. store the leage 
-      "league" : league,
-      # c. store the season in its own column
-      "season_start_year" : int(season),
-      # d. store the ingested_at_timestamp
-      "extracted_at" : extracted_at_timestamp,
-      # f. store the run ID from point of ingestion as its own column
-      "run_id" : f"{extracted_at_timestamp.strftime('%Y%m%dT%H%M%S')}_{uuid.uuid4().hex[:8]}",
-      # g. store Understat as the source
-      "source" : "Understat",
-      # h. create a hash for the JSON payload for idempotency purposes
-      "payload_content_hash" : create_hash(match),
-      # i. store the JSON payload for the match
-      "payload" : json.dumps(match)
-    }
+  try:
 
-    match_rows.append(row)
+    for match in data:
+      match_rows.append({
+        # a. extract the match_id into its own column
+        "match_id" : int(match["id"]),
+        # b. store the leage 
+        "league" : league,
+        # c. store the season in its own column
+        "season_start_year" : int(season),
+        # d. store the ingested_at_timestamp
+        "extracted_at" : extracted_at_timestamp,
+        # f. store the run ID from point of ingestion as its own column
+        "run_id" : batch_run_id,
+        # g. store Understat as the source
+        "source" : "Understat",
+        # h. create a hash for the JSON payload for idempotency purposes
+        "payload_content_hash" : create_hash(match),
+        # i. store the JSON payload for the match
+        "payload" : json.dumps(match)
+    })
+      
+    logger.info(f"Transformed {len(match_rows)} rows for {league} {season}.")
+    return pd.DataFrame.from_dict(data=match_rows)
 
-  match_df = pd.DataFrame.from_dict(data=match_rows)
-
-  print("match data transformed successfully.")
-
-  return match_df
+  except KeyError as e:
+    logger.error(f"Data structure error in transformation: Missing key {e}")
+    raise
 
 
 def load_match_data_to_bigquery(data, table_id):
@@ -88,11 +107,14 @@ def load_match_data_to_bigquery(data, table_id):
       bigquery.SchemaField("payload_content_hash", "STRING", mode="NULLABLE"),
       bigquery.SchemaField("payload", "STRING", mode="NULLABLE")
     ],
-    write_disposition="WRITE_TRUNCATE"
+    write_disposition="WRITE_APPEND"
   )
 
-  job = client.load_table_from_dataframe(dataframe=data, destination=table_id, job_config=job_config)
-  job.result()
-
-  table = client.get_table(table_id)
-  print(f"Loaded {table.num_rows} rows and {len(table.schema)} columns to {table_id} table.")
+  try:
+    logger.info(f"Loading data to {table_id}...")
+    job = client.load_table_from_dataframe(dataframe=data, destination=table_id, job_config=job_config)
+    job.result()
+    logger.info(f"Job complete. Loaded to {table_id}")
+  except Exception as e:
+    print(f"BigQuery load failed: {e}")
+    raise
