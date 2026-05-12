@@ -1,4 +1,88 @@
 models:
+
+  - name: dim_teams
+    description: Table containing id and name of all the unique football teams in the dataset.
+    columns:
+      - name: id
+        description: The unique Understat team id for the team.
+        tests:
+          - unique
+          - not_null
+      - name: name
+        description: Football team name from Understat.
+        tests:
+          - unique
+          - not_null
+      - name: short_name
+        description: The team's 3-letter abbreviation code.
+        tests:
+          - not_null
+
+  - name: fct_matches
+    description: Fact table containing information on football matches, grain is one match per row.
+    columns:
+      - name: match_id
+        description: Unique Understat id for each match.
+        tests:
+          - not_null
+          - unique
+      - name: league
+        description: The league that the match is played in.
+        tests:
+          - not_null
+      - name: season
+        description: The starting year of the season the match was played in.
+        tests:
+          - not_null
+      - name: match_date
+        description: The match the date was played on.
+        tests:
+          - not_null
+      - name: match_time
+        description: The kick off time of the match in UTC.
+        tests:
+          - not_null
+      - name: home_team_id
+        description: Unique ID of the home team.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                field: id
+                to: ref('dim_teams')
+      - name: away_team_id
+        description: Unique ID of the away team.
+        tests: 
+          - not_null
+          - relationships:
+              arguments:
+                field: id
+                to: ref('dim_teams')
+      - name: home_goals
+        description: The number of goals scored by the home team.
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: away_goals
+        description: The number of goals scored by the away team.
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: home_xg
+        description: Total xg acumulated by the home team.
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: away_xg
+        description: Total xg accumulated by the away team.
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
   - name: fct_epl_league_table_25_26
     description: Live Premier League standings for the 2025-2026 season, including standard metrics and xG totals.
     columns:
@@ -12,7 +96,6 @@ models:
         tests:
           - unique
           - not_null
-
       - name: w
         description: Total number of wins
         tests:

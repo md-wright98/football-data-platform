@@ -7,12 +7,36 @@ models:
       tests:
         - unique
         - not_null
+    - name: league
+      description: The name of the league the match was played in.
+      tests:
+        - not_null
+    - name: season
+      description: The starting year of the season the match was played in.
+      tests:
+        - not_null
+    - name: home_team_id
+      description: Unique Understat identifier for the home team.
+      tests:
+        - not_null
     - name: home_team_name
       description: Name of the home team.
       tests: 
         - not_null
+    - name: home_team_name_short
+      description: 3-letter abbreviation for home team name.
+      tests:
+        - not_null
+    - name: away_team_id
+      description: Unique understat identifier for the away team.
+      tests:
+        - not_null
     - name: away_team_name
       description: Name of the away team.
+      tests:
+        - not_null
+    - name: away_team_name_short
+      description: 3-letter abbreviation for the away team name.
       tests:
         - not_null
     - name: home_goals
@@ -43,5 +67,24 @@ models:
       description: Date the game was played on or is scheduled to be played on.
       tests:
         - not_null
-        
-            
+    - name: match_time
+      description: Kick off time of the match.
+    - name: home_win_probability
+      description: Proportion chance that the home team wins the game, given the expected goals accumulated by each team.
+      tests:
+        - dbt_utils.accepted_range:
+            arguments:
+              min_value: 0
+    - name: draw_probability
+      description: Proportion chance that the game ends as a draw, given the expected goals accumulated by each team.
+      tests:
+        - dbt_utils.accepted_range:
+            arguments:
+              min_value: 0
+    - name: away_win_probability
+      description: Proportion chance that the away team wins the game, given the expected goals accumulated by each team.
+      tests:
+        - dbt_utils.accepted_range:
+            arguments:
+              min_value: 0
+    
