@@ -1,8 +1,8 @@
-name: "football-data-platform"
+name: "football_data_platform"
 version: "1.0.0"
 config-version: 2
 
-profile: "football-data-platform"
+profile: "football_data_platform"
 
 model-paths: ["models"]
 analysis-paths: ["analyses"]
