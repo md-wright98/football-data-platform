@@ -1,10 +1,36 @@
-with epl_raw as (
+with matches as (
     
-    select * from {{ ref('stg_understat__matches') }}
+    select * from {{ ref('fct_matches') }}
     where league = 'EPL'
     and season = 2025
     and home_goals is not NULL
 
+),
+
+teams as (
+
+    select * from {{ ref('dim_teams') }}
+
+),
+
+full_match_table as (
+
+    select
+        m.match_id,
+        m.league,
+        m.season,
+        m.match_date,
+        m.match_time,
+        t1.name as home_team_name,
+        t2.name as away_team_name,
+        m.home_goals,
+        m.away_goals,
+        m.home_xg,
+        m.away_xg
+    
+    from matches as m
+    left join teams as t1 on m.home_team_id = t1.id
+    left join teams as t2 on m.away_team_id = t2.id
 ),
 
 home_results as (
@@ -36,7 +62,7 @@ home_results as (
             when home_goals = away_goals then 1
             else 0
             end as points
-    from epl_raw
+    from full_match_table
 
 ),
 
@@ -69,7 +95,7 @@ away_results as (
             when home_goals = away_goals then 1
             else 0
             end as points
-    from epl_raw
+    from full_match_table
 
 ),
 
