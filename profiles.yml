@@ -1,0 +1,12 @@
+football_data_platform:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      keyfile: gcp-key.json
+      project: football-data-platform-483422
+      dataset: epl_raw
+      threads: 4
+      timeout_seconds: 300
+      location: US
