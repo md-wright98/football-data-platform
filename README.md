@@ -34,8 +34,8 @@ An end-to-end data engineering pipeline that extracts football match metrics (xG
 
 ## Future Roadmap
 
--**CI:** Use GitHub actions to run `dbt build` on each PR and merge for quality control.
--**Incremental Model:** Implement an incremental model in dbt to prevent ballooning storage requirements and costs.
+- **CI:** Use GitHub actions to run `dbt build` on each PR and merge for quality control.
+- **Incremental Model:** Implement an incremental model in dbt to prevent ballooning storage requirements and costs.
 - **Orchestration:** Implement Prefect Cloud for automated weekly runs
 - **Containerisation:** Dockerize the ingestion script for cloud deployment
 - **Visualization**: Connect a Looker Studio or Evidence.dev dashboard for the marts layer.
