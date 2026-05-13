@@ -131,6 +131,7 @@ final as (
 select 
     row_number() over(order by pts desc, gd desc, gf desc) as pos,
     team_name,
+    w + d + l as gp,
     w,
     d,
     l,

@@ -32,7 +32,7 @@ jobs:
       - name: Run dbt tests
         run: |
           dbt deps
-          dbt test --target dev --profiles-dir .
+          dbt build --target dev --profiles-dir .
         env:
           DBT_BIGQUERY_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
           DBT_BIGQUERY_DATASET: ${{ secrets.GCP_DATASET }}
