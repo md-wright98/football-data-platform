@@ -22,7 +22,3 @@ models:
       +materialized: view
     marts:
       +materialized: table
-      core:
-        +tags: ["core"]
-      analytics:
-        +materialized: table
