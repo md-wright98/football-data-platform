@@ -9,4 +9,4 @@ football_data_platform:
       dataset: epl_raw
       threads: 4
       timeout_seconds: 300
-      location: US
+      location: europe-west2
