@@ -1,3 +1,4 @@
+from prefect import flow, task
 from match_data_pipeline import download_match_data, transform_match_data, load_match_data_to_bigquery 
 import argparse
 import logging
@@ -5,24 +6,43 @@ import logging
 dataset_id = "epl_raw"
 table_id = "football-data-platform-483422.epl_raw.understat_matches_raw"
 
-def main(league: str, season: str):
-  
-  try:
 
-    raw_match_data, extracted_at = download_match_data(league=league, season=season)
+@task(retries=3, retry_delay_seconds=60, name="Fetch Match Data")
+def task_download(league, season):
+  return download_match_data(league, season)
 
-    transformed_data = transform_match_data(
-      data=raw_match_data, 
+
+@task(name="Transform Match Data")
+def task_transform(raw_match_data, league, season, extracted_at):
+  return transform_match_data(raw_match_data, league, season, extracted_at)
+
+
+@task(retries=3, retry_delay_seconds=60, name="Load Match Data to BigQuery")
+def task_upload(transformed_data, table_id):
+  return load_match_data_to_bigquery(transformed_data, table_id)
+
+
+@flow(name="Match Data Pipeline")
+def match_data_flow(leagues=['EPL', 'La_Liga', 'Bundesliga', 'Serie_A', 'Ligue_1'], season="2025"):
+
+  for league in leagues:
+
+    raw_match_data, extracted_at = task_download(league=league, season=season)
+
+    if raw_match_data is None:
+      print('No data found, terminating flow.')
+      continue
+
+    transformed_data = task_transform(
+      raw_match_data=raw_match_data, 
       league=league, 
       season=season, 
-      extracted_at_timestamp=extracted_at)
+      extracted_at=extracted_at)
     
-    load_match_data_to_bigquery(transformed_data, table_id)
+    task_upload(transformed_data, table_id)
 
     logging.info(f"Successfully completed pipeline run for {league} {season}")
-  
-  except Exception as e:
-    logging.error(f"Pipeline failed for {league} {season}: {str(e)}")
+
 
 if __name__ == "__main__":
 
@@ -33,7 +53,8 @@ if __name__ == "__main__":
   parser.add_argument(
     "--league",
     type=str,
-    default="EPL",
+    nargs='+',
+    default=['EPL', 'La_Liga', 'Bundesliga', 'Serie_A', 'Ligue_1'],
     help="League to fetch data for (default: EPL)."
   )
 
@@ -46,4 +67,9 @@ if __name__ == "__main__":
 
   args = parser.parse_args()
 
-  main(league=args.league, season=args.season)
+  print("Deploying flow to Prefect Cloud...")
+  match_data_flow.serve(
+    name="Bi-weekly Match Data Ingestion",
+    cron="0 9 * * 2,5",
+    parameters={"leagues" : args.league, "season" : args.season}
+  )
