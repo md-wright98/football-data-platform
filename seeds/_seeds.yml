@@ -1,0 +1,26 @@
+seeds:
+  - name: dim_leagues
+    description: Dimensional table containing metadata for the 6 football leagues included in the Understat dataset.
+    columns:
+      - name: league_id
+        description: The unique identifier for the league as written by the Understat API
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['EPL', 'La_Liga', 'Bundesliga', 'Serie_A', 'Ligue_1', 'RFPL']
+      - name: league_name
+        description: Clean version of the league name.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Premier League', 'La Liga', 'Bundesliga', 'Serie A', 'Ligue 1', 'Russian Premier League']
+      - name: country
+        description: The country the league is played in.
+        tests:
+          - not_null
+      - name: tier
+        description: The tier of the footballing pyramid the league is played at, with the highest tier being 1.
+        tests:
+          - not_null
